@@ -1,10 +1,10 @@
-# Performance Analyzer for VS Code
+# Performance Analyzer
 
-Compare two versions of a Python function using the same inputs. The extension checks behavior and reports median runtime for each case.
+A VS Code extension for checking whether a Python change actually helps. Profile a function, compare an edited version against test cases, and export the results.
 
-This is an early local benchmark tool. AI suggestions, memory profiling, automatic optimization, and line-level hotspots are not implemented.
+The repository name comes from the original AI assistant idea. This version uses Python profiling and benchmarks; it does not generate AI suggestions.
 
-## Setup
+## Run it
 
 Requires Node.js 22+, Python 3.10+, and VS Code 1.100+.
 
@@ -14,30 +14,47 @@ npm run compile
 code --extensionDevelopmentPath="/absolute/path/to/this/repo"
 ```
 
-Replace the path with your checkout. In the new VS Code window, open this repo and `example.py`. Set **Performance Analyzer: Python Path** if the Python executable is not available as `python`.
+Open this repo in the new window. Set **Performance Analyzer: Python Path** if `python` is not on your PATH. Commands are in the Command Palette.
 
-## Compare a change
+1. Open the saved `deduplicate.py` file.
+2. Run **Performance Analyzer: Profile File** and choose `deduplicate-benchmark.json`.
+3. Read the slowest functions, line numbers, runtime samples, and peak Python allocations in the output panel.
+4. Focus `deduplicate.py` again. Run **Performance Analyzer: Compare File**, choose `deduplicate-fast.py`, then the same config.
+5. Run **Performance Analyzer: Export Report** to save JSON or Markdown.
 
-1. Open and save the original Python file.
-2. Run **Performance Analyzer: Compare File** from the Command Palette.
-3. Pick `candidate.py`, then `benchmark.json`.
-4. Review the code before approving execution. Results appear in **Performance Comparison**.
+Review the selected code before approving execution. These commands run code locally with your permissions.
 
-The command compares source snapshots and does not edit either file. The old `performanceAnalyzer.analyzeFile` command ID is retained for compatibility.
+## Example result
 
-## Collab compatibility
+The example removes duplicate integers while preserving order. The first version searches a list for every item; the second uses a set for membership and a list for the output. That trades extra memory for average linear-time work.
 
-[Collab Review](https://github.com/FrOxyz06/realtime-collaborative-coding) uses the same runner and test configuration before accepting a proposal. Copy a `benchmark.json` between the projects without changing its format. See [BENCHMARK.md](BENCHMARK.md).
+One local Windows/Python 3.12.14 run on 5,000 distinct integers produced these medians over seven timed calls:
+
+| Measurement | List version | Set version |
+| --- | ---: | ---: |
+| Runtime | 84.1196 ms | 0.9355 ms |
+| Peak traced allocation | 42,224 bytes | 697,800 bytes |
+
+All four cases passed, including an empty list, order/duplicates, and an expected invalid-input exception. The candidate timing was flagged **noisy**, so the report deliberately omits a speedup claim. These are one machine's measurements, not a guaranteed improvement. See [the raw report](sample-report.json) for samples, hashes, environment, and variation. Tests also check both implementations against an independent oracle on 500 seeded random inputs.
+
+## How it works
+
+TypeScript handles VS Code commands. A small Node bridge starts the standard-library Python runner. Each source runs in a separate process. The runner checks return types/values, input mutation, captured output, expected exceptions, and consistency across repeated calls.
+
+Timing excludes input copying and module loading. Profiling (`cProfile`) and allocation measurement (`tracemalloc`) run separately so their overhead is excluded from runtime samples. Allocations are Python-traced peak bytes, not total process memory. Reports keep raw samples and flag short or noisy timings.
+
+[Collab Review](https://github.com/FrOxyz06/realtime-collaborative-coding) uses the same runner and config to check proposed changes before acceptance. See [BENCHMARK.md](BENCHMARK.md).
 
 ## Tests
 
 ```sh
 npm test
 npm run test:python
+npm run test:editor
 ```
 
-Node tests check the command with a VS Code mock and run the real Python bridge. Python tests cover behavior comparisons, input validation, failures, and timeouts.
+The last command downloads VS Code 1.138.0 and runs the actual compare, profile, and export commands in an isolated editor profile. Dialog answers are automated. On Linux use `xvfb-run -a npm run test:editor`. On Windows, use a short `VSCODE_TEST_CACHE` path if the download exceeds path limits. `TEST_PYTHON` can select a Python executable for editor tests.
 
 ## Limits
 
-Synchronous top-level Python functions with JSON inputs. Measurements are small local samples, so tiny differences may be noise. Passing cases do not prove equivalence for every input or external side effect. Code runs locally with your permissions, not in a sandbox. No code runs automatically when a file is opened.
+Synchronous Python functions with JSON inputs and JSON/tuple outputs only. This is not a sandbox or proof of equivalence for untested inputs. Timing order is fixed (original first), and results can change with machine load. Filesystem/network effects and native allocations are outside the checks. Five-second worker limits bound small examples, not the risks of untrusted code.

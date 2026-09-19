@@ -1,0 +1,302 @@
+{
+  "schemaVersion": 1,
+  "mode": "compare",
+  "passed": true,
+  "cases": [
+    {
+      "name": "empty",
+      "passed": true,
+      "beforeMs": 0.0007,
+      "afterMs": 0.0008,
+      "before": {
+        "medianMs": 0.0007,
+        "minMs": 0.0006,
+        "maxMs": 0.0015,
+        "samplesMs": [
+          0.0015,
+          0.0009,
+          0.0007,
+          0.0007,
+          0.0006,
+          0.0006,
+          0.0008
+        ],
+        "madMs": 0.00010000000000000005,
+        "peakBytes": 1200,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 0.011600000000000001,
+            "cumulativeMs": 0.014900000000000002
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 1,
+            "selfMs": 0.0004,
+            "cumulativeMs": 0.0004
+          }
+        ]
+      },
+      "after": {
+        "medianMs": 0.0008,
+        "minMs": 0.0007,
+        "maxMs": 0.0019,
+        "samplesMs": [
+          0.0019,
+          0.0018,
+          0.0012,
+          0.0008,
+          0.0007,
+          0.0008,
+          0.0007
+        ],
+        "madMs": 0.00010000000000000005,
+        "peakBytes": 1200,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 0.0078,
+            "cumulativeMs": 0.0106
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 1,
+            "selfMs": 0.0004,
+            "cumulativeMs": 0.0004
+          }
+        ]
+      },
+      "timingNote": "noisy"
+    },
+    {
+      "name": "order and duplicates",
+      "passed": true,
+      "beforeMs": 0.0011,
+      "afterMs": 0.002,
+      "before": {
+        "medianMs": 0.0011,
+        "minMs": 0.0009,
+        "maxMs": 0.0018,
+        "samplesMs": [
+          0.0018,
+          0.0013,
+          0.0009,
+          0.001,
+          0.0011,
+          0.001,
+          0.0011
+        ],
+        "madMs": 0.00010000000000000005,
+        "peakBytes": 880,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 0.0046,
+            "cumulativeMs": 0.007700000000000001
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 6,
+            "selfMs": 0.0013,
+            "cumulativeMs": 0.0013
+          }
+        ]
+      },
+      "after": {
+        "medianMs": 0.002,
+        "minMs": 0.0016,
+        "maxMs": 0.0024,
+        "samplesMs": [
+          0.0024,
+          0.0021,
+          0.0021,
+          0.0019,
+          0.002,
+          0.0016,
+          0.0019
+        ],
+        "madMs": 0.00010000000000000005,
+        "peakBytes": 880,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 0.14020000000000002,
+            "cumulativeMs": 0.1449
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 6,
+            "selfMs": 0.0015,
+            "cumulativeMs": 0.0015
+          }
+        ]
+      },
+      "timingNote": "too short"
+    },
+    {
+      "name": "invalid type",
+      "passed": true,
+      "beforeMs": 0.0014,
+      "afterMs": 0.0015,
+      "before": {
+        "medianMs": 0.0014,
+        "minMs": 0.0012,
+        "maxMs": 0.0033,
+        "samplesMs": [
+          0.0033,
+          0.002,
+          0.0014,
+          0.0016,
+          0.0014,
+          0.0012,
+          0.0012
+        ],
+        "madMs": 0.0002000000000000001,
+        "peakBytes": 1288,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 0.9381,
+            "cumulativeMs": 0.9465000000000001
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 3,
+            "selfMs": 0.0073,
+            "cumulativeMs": 0.0073
+          }
+        ]
+      },
+      "after": {
+        "medianMs": 0.0015,
+        "minMs": 0.0013,
+        "maxMs": 0.0036,
+        "samplesMs": [
+          0.0036,
+          0.0023,
+          0.0015,
+          0.0017,
+          0.0013,
+          0.0013,
+          0.0013
+        ],
+        "madMs": 0.0002000000000000001,
+        "peakBytes": 1296,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 0.009000000000000001,
+            "cumulativeMs": 0.012100000000000001
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 3,
+            "selfMs": 0.0020000000000000005,
+            "cumulativeMs": 0.0020000000000000005
+          }
+        ]
+      },
+      "timingNote": "noisy"
+    },
+    {
+      "name": "5000 distinct integers",
+      "passed": true,
+      "beforeMs": 84.1196,
+      "afterMs": 0.9355,
+      "before": {
+        "medianMs": 84.1196,
+        "minMs": 77.0437,
+        "maxMs": 89.1904,
+        "samplesMs": [
+          77.4515,
+          77.0437,
+          84.1196,
+          88.0478,
+          89.1904,
+          79.5919,
+          85.6375
+        ],
+        "madMs": 4.52770000000001,
+        "peakBytes": 42224,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 74.4689,
+            "cumulativeMs": 76.0156
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 5001,
+            "selfMs": 0.5358,
+            "cumulativeMs": 0.5358
+          }
+        ]
+      },
+      "after": {
+        "medianMs": 0.9355,
+        "minMs": 0.8298,
+        "maxMs": 1.2706,
+        "samplesMs": [
+          1.1983,
+          0.8357,
+          0.8298,
+          0.8641,
+          1.2706,
+          0.9922,
+          0.9355
+        ],
+        "madMs": 0.0998,
+        "peakBytes": 697800,
+        "hotspots": [
+          {
+            "function": "unique",
+            "line": 1,
+            "calls": 1,
+            "selfMs": 2.6938,
+            "cumulativeMs": 12.378
+          },
+          {
+            "function": "<genexpr>",
+            "line": 3,
+            "calls": 5001,
+            "selfMs": 4.0909,
+            "cumulativeMs": 4.0909
+          }
+        ]
+      },
+      "timingNote": "noisy"
+    }
+  ],
+  "recordedAt": "2026-09-19T17:21:28.551657+00:00",
+  "environment": {
+    "python": "3.12.14",
+    "os": "Windows",
+    "machine": "AMD64"
+  },
+  "sourceHashes": {
+    "before": "bc139a91d91e90a4d22f1dbacfca5267faf147fb551f86bef8f0375b8700adcd",
+    "after": "47fe30f8b76479a0afd604f1b9da00dcee0f05b3653e0c6d6d9e823b0f5e2e84"
+  },
+  "configHash": "27288e57b655b910ef137d9886843b2a6758346f782c2aa42aa38754b7507a0c"
+}

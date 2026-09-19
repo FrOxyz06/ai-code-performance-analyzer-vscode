@@ -5,7 +5,7 @@ const path = require('node:path');
 const fs = require('node:fs');
 
 test('comparison command enforces trust and passes the shared benchmark request', async () => {
-    let command, action, errors = [], selected = [], calls = 0, shown = false;
+    let commands = new Map(), errors = [], selected = [], calls = 0, shown = false;
     const original = fs.readFileSync('example.py', 'utf8');
     const vscode = {
         workspace: { isTrusted: false, getConfiguration: () => ({ get: () => 'python' }) },
@@ -15,7 +15,7 @@ test('comparison command enforces trust and passes the shared benchmark request'
             showErrorMessage: text => errors.push(text), showWarningMessage: async () => 'Run trusted code',
             showOpenDialog: async () => selected.shift()
         },
-        commands: { registerCommand: (id, callback) => { command = id; action = callback; return { dispose() {} }; } }
+        commands: { registerCommand: (id, callback) => { commands.set(id, callback); return { dispose() {} }; } }
     };
     const load = Module._load;
     Module._load = function (name, ...args) {
@@ -29,7 +29,8 @@ test('comparison command enforces trust and passes the shared benchmark request'
     };
     try {
         require('./out/extension.js').activate({ subscriptions: [] });
-        assert.equal(command, require('./package.json').contributes.commands[0].command);
+        const action = commands.get('performanceAnalyzer.analyzeFile');
+        for (const item of require('./package.json').contributes.commands) assert.ok(commands.has(item.command));
         await action(); assert.match(errors.pop(), /trusted/); assert.equal(calls, 0);
         vscode.workspace.isTrusted = true;
         selected = [undefined]; await action(); assert.equal(calls, 0);

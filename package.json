@@ -1,8 +1,8 @@
 {
   "name": "performance-analyzer-vscode",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "displayName": "Performance Analyzer",
-  "description": "Compare Python function behavior and median runtime using the same benchmark format as Collab Review.",
+  "description": "Profile Python functions, compare behavior/runtime/allocations, and export reproducible reports.",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -12,6 +12,14 @@
       {
         "command": "performanceAnalyzer.analyzeFile",
         "title": "Performance Analyzer: Compare File"
+      },
+      {
+        "command": "performanceAnalyzer.profileFile",
+        "title": "Performance Analyzer: Profile File"
+      },
+      {
+        "command": "performanceAnalyzer.exportReport",
+        "title": "Performance Analyzer: Export Report"
       }
     ],
     "configuration": {
@@ -29,7 +37,8 @@
   "scripts": {
     "compile": "tsc",
     "test": "npm run compile && node --test *.test.cjs",
-    "test:python": "python -m unittest -v test_benchmark.py"
+    "test:python": "python -m unittest -v test_benchmark.py",
+    "test:editor": "npm run compile && node run-editor-tests.cjs"
   },
   "keywords": [],
   "author": "",
@@ -38,6 +47,7 @@
   "devDependencies": {
     "@types/node": "^22.20.3",
     "@types/vscode": "^1.138.0",
+    "@vscode/test-electron": "^3.1.0",
     "typescript": "^7.0.2"
   },
   "repository": {
