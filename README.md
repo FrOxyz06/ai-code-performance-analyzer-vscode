@@ -1,18 +1,16 @@
-# AI Code Performance Analyzer — VS Code Extension
+# Code Performance Analyzer for VS Code
 
-**Status: Planned — README only; source code pending.**
+**Planned — code not uploaded yet.**
 
-A planned VS Code extension for understanding Python performance and reviewing test-backed optimization suggestions.
+A VS Code extension for checking how a Python function performs and trying out optimizations without leaving the editor.
 
-## Current state
+## What I want to build
 
-An earlier project discussion mentions a running scaffold, but those files are not included here.
+- Run a selected function with test inputs.
+- Compare runtime and memory usage before and after a change.
+- Show AI suggestions as a diff that can be reviewed.
+- Run the same tests on both versions before accepting a change.
 
-There is no runnable application, installation command, benchmark result, or release in this repository yet.
+## Next steps
 
-## Planned milestones
-
-- [ ] Import the existing extension scaffold when available.
-- [ ] Analyze a selected function and collect runtime and memory measurements.
-- [ ] Show optimization suggestions and before/after comparisons.
-- [ ] Check candidate behavior against explicit tests before accepting edits.
+Upload the extension scaffold, get one function-analysis command working, then add the comparison view. This repo only has the project plan for now.
