@@ -1,8 +1,8 @@
 {
   "name": "performance-analyzer-vscode",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "displayName": "Performance Analyzer",
-  "description": "Early VS Code extension scaffold for a planned performance analyzer.",
+  "description": "Compare Python function behavior and median runtime using the same benchmark format as Collab Review.",
   "engines": {
     "vscode": "^1.100.0"
   },
@@ -11,13 +11,25 @@
     "commands": [
       {
         "command": "performanceAnalyzer.analyzeFile",
-        "title": "Performance Analyzer: Analyze File"
+        "title": "Performance Analyzer: Compare File"
       }
-    ]
+    ],
+    "configuration": {
+      "title": "Performance Analyzer",
+      "properties": {
+        "performanceAnalyzer.pythonPath": {
+          "type": "string",
+          "default": "python",
+          "scope": "machine",
+          "description": "Python 3.10+ executable path (no command-line arguments)."
+        }
+      }
+    }
   },
   "scripts": {
     "compile": "tsc",
-    "test": "npm run compile && node --test extension.test.cjs"
+    "test": "npm run compile && node --test *.test.cjs",
+    "test:python": "python -m unittest -v test_benchmark.py"
   },
   "keywords": [],
   "author": "",
@@ -31,5 +43,12 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/FrOxyz06/ai-code-performance-analyzer-vscode.git"
+  },
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "Code execution and applying proposals require workspace trust."
+    },
+    "virtualWorkspaces": false
   }
 }
