@@ -1,0 +1,35 @@
+{
+  "name": "performance-analyzer-vscode",
+  "version": "0.1.0",
+  "displayName": "Performance Analyzer",
+  "description": "Early VS Code extension scaffold for a planned performance analyzer.",
+  "engines": {
+    "vscode": "^1.100.0"
+  },
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "performanceAnalyzer.analyzeFile",
+        "title": "Performance Analyzer: Analyze File"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc",
+    "test": "npm run compile && node --test extension.test.cjs"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^22.20.3",
+    "@types/vscode": "^1.138.0",
+    "typescript": "^7.0.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/FrOxyz06/ai-code-performance-analyzer-vscode.git"
+  }
+}

@@ -1,16 +1,29 @@
-# Code Performance Analyzer for VS Code
+# Performance Analyzer for VS Code
 
-**Planned — code not uploaded yet.**
+An early extension scaffold for a code performance analyzer.
 
-A VS Code extension for checking how a Python function performs and trying out optimizations without leaving the editor.
+**Current state:** the Analyze File command loads and displays a notification. Profiling, benchmarks, memory measurements, AI suggestions, and before/after comparisons are not implemented yet.
 
-## What I want to build
+## Run
 
-- Run a selected function with test inputs.
-- Compare runtime and memory usage before and after a change.
-- Show AI suggestions as a diff that can be reviewed.
-- Run the same tests on both versions before accepting a change.
+Requires Node.js 22+ and VS Code 1.100+.
 
-## Next steps
+```sh
+npm ci
+npm run compile
+code --extensionDevelopmentPath="/absolute/path/to/this/repo"
+```
 
-Upload the extension scaffold, get one function-analysis command working, then add the comparison view. This repo only has the project plan for now.
+Replace the path with your local checkout. In the Extension Development Host, open the Command Palette and run **Performance Analyzer: Analyze File**. It should display "Performance Analyzer is running!". The command does not analyze the current file yet.
+
+## Check
+
+```sh
+npm test
+```
+
+This compiles the TypeScript and tests command registration, notification, and cleanup with a small VS Code API mock. It is not a full Extension Development Host test.
+
+## Next step
+
+Read the active Python file, then add one profiling command before expanding the UI. Keep results measurable and test changes before applying them.
