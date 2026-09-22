@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
+import { askCopilot } from './copilot';
 const { runBenchmark, report } = require('../benchmark.cjs');
 
 export function activate(context: vscode.ExtensionContext) {
@@ -8,6 +9,7 @@ export function activate(context: vscode.ExtensionContext) {
     let lastReport: any;
     const output = vscode.window.createOutputChannel('Performance Analyzer');
     context.subscriptions.push(output);
+    context.subscriptions.push(vscode.commands.registerCommand('performanceAnalyzer.askCopilot', askCopilot));
     async function analyze(mode: 'profile' | 'compare') {
         if (running) { vscode.window.showErrorMessage('A benchmark is already running'); return; }
         running = true;
