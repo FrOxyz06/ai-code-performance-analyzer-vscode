@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import { askCopilot } from './copilot';
-const { runBenchmark, report } = require('../benchmark.cjs');
+const { runBenchmark, report } = require('../benchmark/benchmark.cjs');
 
 export function activate(context: vscode.ExtensionContext) {
     let running = false;

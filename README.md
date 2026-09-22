@@ -24,10 +24,10 @@ code --extensionDevelopmentPath="/absolute/path/to/this/repo"
 
 Open this repo in the new window. Set **Performance Analyzer: Python Path** if `python` is not on your PATH. Commands are in the Command Palette.
 
-1. Open the saved `deduplicate.py` file.
-2. Run **Performance Analyzer: Profile File** and choose `deduplicate-benchmark.json`.
+1. Open the saved `examples/deduplicate.py` file.
+2. Run **Performance Analyzer: Profile File** and choose `examples/deduplicate-benchmark.json`.
 3. Read the slowest functions, line numbers, runtime samples, and peak Python allocations in the output panel.
-4. Focus `deduplicate.py` again. Run **Performance Analyzer: Compare File**, choose `deduplicate-fast.py`, then the same config.
+4. Focus `examples/deduplicate.py` again. Run **Performance Analyzer: Compare File**, choose `examples/deduplicate-fast.py`, then the same config.
 5. Run **Performance Analyzer: Export Report** to save JSON or Markdown.
 
 Review the selected code before approving execution. These commands run code locally with your permissions.
@@ -43,7 +43,7 @@ One local Windows/Python 3.12.14 run on 5,000 distinct integers produced these m
 | Runtime | 84.1196 ms | 0.9355 ms |
 | Peak traced allocation | 42,224 bytes | 697,800 bytes |
 
-All four cases passed, including an empty list, order/duplicates, and an expected invalid-input exception. The candidate timing was flagged **noisy**, so the report deliberately omits a speedup claim. These are one machine's measurements, not a guaranteed improvement. See [the raw report](sample-report.json) for samples, hashes, environment, and variation. Tests also check both implementations against an independent oracle on 500 seeded random inputs.
+All four cases passed, including an empty list, order/duplicates, and an expected invalid-input exception. The candidate timing was flagged **noisy**, so the report deliberately omits a speedup claim. These are one machine's measurements, not a guaranteed improvement. See [the raw report](examples/sample-report.json) for samples, hashes, environment, and variation. Tests also check both implementations against an independent oracle on 500 seeded random inputs.
 
 ## How it works
 
@@ -51,7 +51,16 @@ TypeScript handles VS Code commands. A small Node bridge starts the standard-lib
 
 Timing excludes input copying and module loading. Profiling (`cProfile`) and allocation measurement (`tracemalloc`) run separately so their overhead is excluded from runtime samples. Allocations are Python-traced peak bytes, not total process memory. Reports keep raw samples and flag short or noisy timings.
 
-[Collab Review](https://github.com/FrOxyz06/realtime-collaborative-coding) uses the same runner and config to check proposed changes before acceptance. See [BENCHMARK.md](BENCHMARK.md).
+[Collab Review](https://github.com/FrOxyz06/realtime-collaborative-coding) uses the same runner and config to check proposed changes before acceptance. See [BENCHMARK.md](docs/BENCHMARK.md).
+
+## Project layout
+
+- `src/`: VS Code commands and Copilot integration
+- `benchmark/`: Node bridge and Python runner
+- `examples/`: sample code, benchmark configs, and a measured report
+- `tests/`: unit tests and editor workflow checks
+- `scripts/`: editor test launcher
+- `docs/`: shared benchmark format
 
 ## Tests
 
