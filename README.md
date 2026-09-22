@@ -2,7 +2,15 @@
 
 A VS Code extension for checking whether a Python change actually helps. Profile a function, compare an edited version against test cases, and export the results.
 
-The repository name comes from the original AI assistant idea. This version uses Python profiling and benchmarks; it does not generate AI suggestions.
+Optional GitHub Copilot integration gives performance advice alongside the local profiling and benchmark tools.
+
+## Use with GitHub Copilot
+
+Enable GitHub Copilot in VS Code and sign in with an account that has access to its models. Open a Python file and run **Performance Analyzer: Ask Copilot**. Confirm sharing that file and choose an available Copilot model. The review opens in a separate Markdown document; your source is unchanged.
+
+Only the open file is sent, not other workspace files or benchmark reports. No API key is stored by this extension. Copilot access, consent, quota, and network availability are required. You can cancel a request from its progress notification.
+
+Review the suggestions, save proposed code as a separate Python file, and run **Compare File** using the original file and your benchmark config. AI advice is not evidence of faster or correct code; the local checks still matter. Local profiling works without Copilot.
 
 ## Run it
 
