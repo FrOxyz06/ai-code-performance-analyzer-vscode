@@ -75,3 +75,10 @@ The last command downloads VS Code 1.138.0 and runs the actual compare, profile,
 ## Limits
 
 Synchronous Python functions with JSON inputs and JSON/tuple outputs only. This is not a sandbox or proof of equivalence for untested inputs. Timing order is fixed (original first), and results can change with machine load. Filesystem/network effects and native allocations are outside the checks. Five-second worker limits bound small examples, not the risks of untrusted code.
+
+
+## Maintenance
+
+GitHub Actions runs the Node, Python, and editor tests on pushes and pull requests. Dependabot checks npm dependencies and workflow actions weekly, grouping routine minor and patch updates. Review and test major upgrades separately.
+
+Use `npm ci` to install the committed lockfile. For dependency changes, update `package.json` and `package-lock.json` together and run all three test commands above.
