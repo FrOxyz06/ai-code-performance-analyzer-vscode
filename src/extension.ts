@@ -88,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
                 edit.replace(document.uri, new vscode.Range(document.positionAt(0), document.positionAt(before.length)), after);
                 if (!await vscode.workspace.applyEdit(edit)) throw new Error('Could not apply candidate');
                 await vscode.window.showTextDocument(document);
-                await vscode.window.showInformationMessage('Candidate applied as an unsaved edit. Review and save, or Undo to restore the original.');
+                await vscode.window.showInformationMessage('Candidate applied as an undoable edit. Review and save; VS Code Auto Save follows your settings.');
             }
         } catch (error) {
             vscode.window.showErrorMessage(error instanceof Error ? error.message : String(error));

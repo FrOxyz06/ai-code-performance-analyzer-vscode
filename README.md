@@ -20,9 +20,9 @@ Open a saved Python file and run **Performance Analyzer: Optimize and Compare**:
 2. Confirm sharing the original file with Copilot and choose a model. The benchmark config is not sent.
 3. The extension saves one complete candidate beside the original with a unique `.performance-candidate-...py` name and opens a diff.
 4. Review the candidate, then choose **Compare candidate** and confirm local execution. Canceling leaves the candidate available for manual review; nothing executes automatically.
-5. Inspect the test results, runtime, allocation tradeoffs and timing warnings. If the supplied cases match, **Apply candidate** replaces the original editor contents as an unsaved, undoable edit. Save explicitly to keep it.
+5. Inspect the test results, runtime, allocation tradeoffs and timing warnings. If the supplied cases match, **Apply candidate** replaces the original editor contents as an undoable edit. Save to keep it, or let your existing VS Code Auto Save setting handle saving.
 
-The original is not overwritten on disk. Changed originals or candidates cannot be applied using stale measurements. Candidates remain as separate files; remove them when finished. If you edit a candidate, save it and use **Compare File** to measure that version. A passing comparison does not imply a performance improvement or correctness on untested inputs. This workflow proposes one change, not an automatic retry loop.
+The original stays unchanged until you choose Apply candidate. The extension applies an editor edit rather than writing the original file directly. Changed originals or candidates cannot be applied using stale measurements. Candidates remain as separate files; remove them when finished. If you edit a candidate, save it and use **Compare File** to measure that version. A passing comparison does not imply a performance improvement or correctness on untested inputs. This workflow proposes one change, not an automatic retry loop.
 
 ## Run it
 
