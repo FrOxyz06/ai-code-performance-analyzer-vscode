@@ -66,6 +66,29 @@ async function workflow() {
             const profile = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
             assert.equal(profile.mode, 'profile');
             assert.ok(profile.cases[0].hotspots.length);
+            // Mock only the external AI response; exercise real VS Code documents,
+            // diffs, Python execution, report export, applyEdit and undo.
+            const copilot = require('../out/copilot.js');
+            const generate = copilot.generateCandidate;
+            try {
+                copilot.generateCandidate = async source => {
+                    assert.equal(source, original);
+                    return candidate;
+                };
+                dialogs.push(path.join(root, 'benchmark.json'));
+                await vscode.window.showTextDocument(doc);
+                await vscode.commands.executeCommand('performanceAnalyzer.optimizeFile');
+                assert.equal(doc.getText(), candidate, 'Generated candidate was not applied');
+                assert.equal(doc.isDirty, true);
+                assert.equal(await fs.readFile(originalFile, 'utf8'), original);
+                await vscode.commands.executeCommand('performanceAnalyzer.exportReport');
+                const optimized = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
+                assert.equal(optimized.passed, true);
+                assert.equal(optimized.measurement.method, 'alternating-batches');
+                await vscode.commands.executeCommand('undo');
+                assert.equal(doc.getText(), original, 'Undo did not restore the original');
+            } finally { copilot.generateCandidate = generate; }
+
         }
         assert.deepEqual(errors, []);
         console.log('EDITOR WORKFLOW PASSED: ' + manifest.name);
