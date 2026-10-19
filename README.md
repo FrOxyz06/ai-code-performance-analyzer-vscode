@@ -12,6 +12,18 @@ Only the open file is sent, not other workspace files or benchmark reports. No A
 
 Review the suggestions, save proposed code as a separate Python file, and run **Compare File** using the original file and your benchmark config. AI advice is not evidence of faster or correct code; the local checks still matter. Local profiling works without Copilot.
 
+## Optimize and compare in one workflow
+
+Open a saved Python file and run **Performance Analyzer: Optimize and Compare**:
+
+1. Choose your benchmark JSON with inputs and expected results.
+2. Confirm sharing the original file with Copilot and choose a model. The benchmark config is not sent.
+3. The extension saves one complete candidate beside the original with a unique `.performance-candidate-...py` name and opens a diff.
+4. Review the candidate, then choose **Compare candidate** and confirm local execution. Canceling leaves the candidate available for manual review; nothing executes automatically.
+5. Inspect the test results, runtime, allocation tradeoffs and timing warnings. If the supplied cases match, **Apply candidate** replaces the original editor contents as an undoable edit. Save to keep it, or let your existing VS Code Auto Save setting handle saving.
+
+The original stays unchanged until you choose Apply candidate. The extension applies an editor edit rather than writing the original file directly. Changed originals or candidates cannot be applied using stale measurements. Candidates remain as separate files; remove them when finished. If you edit a candidate, save it and use **Compare File** to measure that version. A passing comparison does not imply a performance improvement or correctness on untested inputs. This workflow proposes one change, not an automatic retry loop.
+
 ## Run it
 
 Requires Node.js 22+, Python 3.10+, and VS Code 1.100+.
@@ -36,7 +48,7 @@ Review the selected code before approving execution. These commands run code loc
 
 The example removes duplicate integers while preserving order. The first version searches a list for every item; the second uses a set for membership and a list for the output. That trades extra memory for average linear-time work.
 
-One local Windows/Python 3.12.14 run on 5,000 distinct integers produced these medians over seven timed calls:
+A historical run with the earlier runner on Windows/Python 3.12.14 on 5,000 distinct integers produced these medians over seven timed calls:
 
 | Measurement | List version | Set version |
 | --- | ---: | ---: |
@@ -49,9 +61,9 @@ All four cases passed, including an empty list, order/duplicates, and an expecte
 
 TypeScript handles VS Code commands. A small Node bridge starts the standard-library Python runner. Each source runs in a separate process. The runner checks return types/values, input mutation, captured output, expected exceptions, and consistency across repeated calls.
 
-Timing excludes input copying and module loading. Profiling (`cProfile`) and allocation measurement (`tracemalloc`) run separately so their overhead is excluded from runtime samples. Allocations are Python-traced peak bytes, not total process memory. Reports keep raw samples and flag short or noisy timings.
+Timing excludes input copying and module loading. Profiling (`cProfile`) and allocation measurement (`tracemalloc`) run separately so their overhead is excluded from runtime samples. Allocations are Python-traced peak bytes, not total process memory. Reports keep raw samples and flag short, noisy, or undersampled timings. Comparisons default to 20 timed calls per case per version, distributed across up to four fresh-process batches with alternating order. Configs may specify 1–50 calls; fewer than 10 suppress the speed ratio. Diagnostics run separately in each batch; reports retain the first batch’s hotspots and maximum peak allocation across batches.
 
-[Collab Review](https://github.com/FrOxyz06/realtime-collaborative-coding) uses the same runner and config to check proposed changes before acceptance. See [BENCHMARK.md](docs/BENCHMARK.md).
+[Collab Review](https://github.com/FrOxyz06/realtime-collaborative-coding) uses the compatible v1 benchmark config to check proposed changes before acceptance. See [BENCHMARK.md](docs/BENCHMARK.md).
 
 ## Project layout
 
@@ -74,7 +86,7 @@ The last command downloads VS Code 1.138.0 and runs the actual compare, profile,
 
 ## Limits
 
-Synchronous Python functions with JSON inputs and JSON/tuple outputs only. This is not a sandbox or proof of equivalence for untested inputs. Timing order is fixed (original first), and results can change with machine load. Filesystem/network effects and native allocations are outside the checks. Five-second worker limits bound small examples, not the risks of untrusted code.
+Synchronous Python functions with JSON inputs and JSON/tuple outputs only. This is not a sandbox or proof of equivalence for untested inputs. Comparison batches alternate original/candidate order, but results can still change with machine load and process startup effects. Filesystem/network effects and native allocations are outside the checks. Five-second worker limits and a twelve-second total runner budget bound small examples, not the risks of untrusted code.
 
 
 ## Maintenance

@@ -46,9 +46,9 @@ def validate(request):
     cases = request.get('cases')
     if not isinstance(cases, list) or not 1 <= len(cases) <= 20:
         raise ValueError('Provide 1 to 20 cases')
-    repeats = request.get('repeats', 5)
-    if type(repeats) is not int or not 1 <= repeats <= 10:
-        raise ValueError('repeats must be an integer from 1 to 10')
+    repeats = request.get('repeats', 20)
+    if type(repeats) is not int or not 1 <= repeats <= 50:
+        raise ValueError('repeats must be an integer from 1 to 50')
     for case in cases:
         if not isinstance(case, dict) or not isinstance(case.get('args', []), list) or not isinstance(case.get('kwargs', {}), dict):
             raise ValueError('Each case needs an args array and optional kwargs object')
@@ -88,7 +88,7 @@ def worker(request):
             samples = []
             first = None
             # One warm-up call is checked but excluded from timing.
-            for iteration in range(request.get('repeats', 5) + 1):
+            for iteration in range(request.get('repeats', 20) + 1):
                 args = copy.deepcopy(case.get('args', []))
                 kwargs = copy.deepcopy(case.get('kwargs', {}))
                 stdout, stderr = Capture(), Capture()
@@ -140,6 +140,23 @@ def worker(request):
     return results
 
 
+def timing_note(before, after):
+    measurements = (before, after)
+    if any(len(side['samplesMs']) < 10 for side in measurements):
+        return 'too few samples'
+    if min(side['medianMs'] for side in measurements) < 0.1:
+        return 'too short'
+    for side in measurements:
+        # Check central spread as well as MAD: a stable majority must not hide
+        # a substantial slower/faster cluster. These are heuristics, not a CI.
+        ordered = sorted(side['samplesMs'])
+        low = ordered[int((len(ordered) - 1) * 0.1)]
+        high = ordered[math.ceil((len(ordered) - 1) * 0.9)]
+        if side['madMs'] > side['medianMs'] * 0.1 or high - low > side['medianMs'] * 0.2:
+            return 'noisy'
+    return 'measurable'
+
+
 def compare(request):
     if request.get('mode') == 'profile':
         request = dict(request, after=request.get('before'))
@@ -148,20 +165,49 @@ def compare(request):
     mode = request.get('mode', 'compare')
     if mode not in ('compare', 'profile'):
         raise ValueError('Unknown benchmark mode')
-    for side in (('before',) if mode == 'profile' else ('before', 'after')):
-        payload = dict(request, source=request[side])
-        try:
-            child = subprocess.run([sys.executable, str(Path(__file__).resolve()), '--worker'],
-                input=json.dumps(payload), capture_output=True, text=True, timeout=5,
-                encoding='utf-8')
-            if child.returncode != 0:
-                raise ValueError('Worker failed: ' + child.stderr[:500])
-            result = json.loads(child.stdout)
-            if 'error' in result:
-                raise ValueError(result['error'])
-            sides[side] = result['cases']
-        except subprocess.TimeoutExpired:
-            raise ValueError(side + ' exceeded the 5 second limit') from None
+    repeats = request.get('repeats', 20)
+    # Distribute exactly the requested sample count across at most four rounds.
+    # Reverse order every round to reduce systematic original-first bias.
+    rounds = 1 if mode == 'profile' else min(4, repeats)
+    deadline = time.monotonic() + 12
+    execution_order = []
+    for round_index in range(rounds):
+        count = repeats // rounds + (round_index < repeats % rounds)
+        order = ('before',) if mode == 'profile' else (
+            ('before', 'after') if round_index % 2 == 0 else ('after', 'before'))
+        execution_order.append(list(order))
+        for side in order:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise ValueError('Benchmark exceeded the 12 second total limit')
+            payload = dict(request, source=request[side], repeats=count)
+            try:
+                child = subprocess.run([sys.executable, str(Path(__file__).resolve()), '--worker'],
+                    input=json.dumps(payload), capture_output=True, text=True, timeout=min(5, remaining),
+                    encoding='utf-8')
+                if child.returncode != 0:
+                    raise ValueError('Worker failed: ' + child.stderr[:500])
+                result = json.loads(child.stdout)
+                if 'error' in result:
+                    raise ValueError(result['error'])
+                batch = result['cases']
+                if side not in sides:
+                    sides[side] = batch
+                else:
+                    for previous, measured in zip(sides[side], batch):
+                        if previous['observed'] != measured['observed']:
+                            raise ValueError('Function produced inconsistent results across batches')
+                        previous['samplesMs'].extend(measured['samplesMs'])
+                        previous['peakBytes'] = max(previous['peakBytes'], measured['peakBytes'])
+            except subprocess.TimeoutExpired:
+                limit = '5 second worker' if remaining >= 5 else '12 second total'
+                raise ValueError(side + ' exceeded the ' + limit + ' limit') from None
+    for measurements in sides.values():
+        for measured in measurements:
+            samples = measured['samplesMs']
+            median = statistics.median(samples)
+            measured.update(medianMs=median, minMs=min(samples), maxMs=max(samples),
+                sampleCount=len(samples), madMs=statistics.median(abs(x - median) for x in samples))
     cases = []
     for i, before in enumerate(sides['before']):
         item = {'name': str(request['cases'][i].get('name', 'Case ' + str(i + 1))), 'passed': True}
@@ -173,13 +219,15 @@ def compare(request):
             item.update(passed=before['observed'] == after['observed'],
                 beforeMs=before['medianMs'], afterMs=after['medianMs'], before=metrics,
                 after={key: value for key, value in after.items() if key != 'observed'})
-            noisy = any(side['madMs'] > side['medianMs'] * 0.1 for side in (before, after))
-            item['timingNote'] = 'noisy' if noisy else ('too short' if min(before['medianMs'], after['medianMs']) < 0.1 else 'measurable')
+            item['timingNote'] = timing_note(before, after)
             if item['passed'] and item['timingNote'] == 'measurable' and after['medianMs'] > 0:
                 item['speedup'] = before['medianMs'] / after['medianMs']
         cases.append(item)
     return {'schemaVersion': 1, 'mode': mode, 'passed': all(case['passed'] for case in cases), 'cases': cases,
         'recordedAt': datetime.now(timezone.utc).isoformat(),
+        'measurement': {'method': 'alternating-batches' if mode == 'compare' else 'single-batch',
+            'executionOrder': execution_order, 'samplesPerSide': repeats, 'warmupsPerBatch': 1,
+            'hotspots': 'first batch', 'peakBytes': 'maximum across batches'},
         'environment': {'python': platform.python_version(), 'os': platform.system(), 'machine': platform.machine()},
         'sourceHashes': {side: hashlib.sha256(request[side].encode('utf-8')).hexdigest() for side in sides},
         'configHash': hashlib.sha256(json.dumps({key: request.get(key) for key in ('schemaVersion', 'function', 'repeats', 'cases')}, sort_keys=True).encode()).hexdigest()}

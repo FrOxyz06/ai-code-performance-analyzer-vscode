@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "function": "total",
-  "repeats": 5,
+  "repeats": 20,
   "cases": [
     {
       "name": "empty",

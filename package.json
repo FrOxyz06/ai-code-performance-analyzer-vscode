@@ -10,6 +10,10 @@
   "contributes": {
     "commands": [
       {
+        "command": "performanceAnalyzer.optimizeFile",
+        "title": "Performance Analyzer: Optimize and Compare"
+      },
+      {
         "command": "performanceAnalyzer.askCopilot",
         "title": "Performance Analyzer: Ask Copilot"
       },

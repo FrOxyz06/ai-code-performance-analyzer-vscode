@@ -116,6 +116,49 @@ class BenchmarkTests(unittest.TestCase):
         self.assertFalse(result['passed'])
         self.assertNotIn('speedup', result['cases'][0])
 
+    def test_alternating_batches_preserve_sample_count(self):
+        request = self.request()
+        request['repeats'] = 11
+        result = benchmark.compare(request)
+        self.assertEqual(result['measurement']['executionOrder'],
+                         [['before', 'after'], ['after', 'before']] * 2)
+        for side in ('before', 'after'):
+            self.assertEqual(len(result['cases'][0][side]['samplesMs']), 11)
+            self.assertEqual(result['cases'][0][side]['sampleCount'], 11)
+        self.assertNotIn('speedup', result['cases'][0])  # function is too short
+
+    def test_defaults_collect_twenty_samples(self):
+        request = self.request()
+        request.pop('repeats')
+        result = benchmark.compare(request)
+        self.assertEqual(result['measurement']['samplesPerSide'], 20)
+        self.assertEqual(len(result['cases'][0]['after']['samplesMs']), 20)
+
+    def test_small_sample_count_withholds_speed_ratio(self):
+        result = benchmark.compare(self.request())
+        self.assertEqual(result['cases'][0]['timingNote'], 'too few samples')
+        self.assertNotIn('speedup', result['cases'][0])
+
+    def test_noise_and_resolution_gates(self):
+        import statistics
+        def measured(samples):
+            median = statistics.median(samples)
+            return {'samplesMs': samples, 'medianMs': median,
+                    'madMs': statistics.median(abs(x - median) for x in samples)}
+        steady = measured([1.0] * 20)
+        self.assertEqual(benchmark.timing_note(steady, steady), 'measurable')
+        self.assertEqual(benchmark.timing_note(steady, measured([0.01] * 20)), 'too short')
+        self.assertEqual(benchmark.timing_note(steady, measured([1.0] * 2)), 'too few samples')
+        self.assertEqual(benchmark.timing_note(steady, measured([1.0] * 15 + [2.0] * 5)), 'noisy')
+        self.assertEqual(benchmark.timing_note(measured([0.7, 1.3] * 10), steady), 'noisy')
+
+    def test_observations_must_match_across_fresh_workers(self):
+        # Return the process ID: stable within a worker, different across batches.
+        request = self.request('import os\ndef f(x): return os.getpid()')
+        request['cases'][0].pop('expected')
+        with self.assertRaisesRegex(ValueError, 'inconsistent results across batches'):
+            benchmark.compare(request)
+
     def test_deduplication_example_against_oracle(self):
         import random
         from pathlib import Path

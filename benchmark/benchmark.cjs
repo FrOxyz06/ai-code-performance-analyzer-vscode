@@ -36,6 +36,7 @@ function report(result) {
     const profile = result.mode === 'profile';
     const lines = [profile ? 'Python function profile' : (result.passed ? 'All supplied cases matched.' : 'Behavior mismatch: do not accept.'),
         'Timing excludes warm-up and diagnostic overhead. Small differences may be noise.', ''];
+    if (result.measurement) lines.push(`Sampling: ${result.measurement.method}; ${result.measurement.samplesPerSide} timed calls per case per side.`);
     function details(label, metrics) {
         if (!metrics) return;
         lines.push(`${label}: median ${metrics.medianMs.toFixed(4)} ms; range ${metrics.minMs.toFixed(4)}–${metrics.maxMs.toFixed(4)} ms; peak traced allocations ${metrics.peakBytes} bytes`);
