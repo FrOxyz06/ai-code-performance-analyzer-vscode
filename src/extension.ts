@@ -66,6 +66,14 @@ export function activate(context: vscode.ExtensionContext) {
                 { modal: true }, 'Run trusted code');
             if (answer !== 'Run trusted code') return;
             await checkOriginal();
+            if (candidate) {
+                const diskCandidate = await fs.readFile(candidate.fsPath, 'utf8');
+                const currentCandidate = vscode.workspace.textDocuments?.find(doc => doc.uri.toString() === candidate!.toString());
+                if (currentCandidate?.isDirty || diskCandidate !== after) {
+                    throw new Error('The candidate changed during confirmation. Save it and start a new comparison.');
+                }
+                await checkOriginal();
+            }
             const python = vscode.workspace.getConfiguration('performanceAnalyzer').get<string>('pythonPath', 'python');
             const result = await runBenchmark(python, { ...config, mode: mode === 'profile' ? 'profile' : 'compare', before, after }, path.dirname(document.fileName));
             lastReport = result;
@@ -100,10 +108,12 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand('performanceAnalyzer.exportReport', async () => {
         try {
             if (!lastReport) throw new Error('Run a profile or comparison first');
+            // Keep the selected report even if another run starts while choosing a path.
+            const selectedReport = lastReport;
             const destination = await vscode.window.showSaveDialog({ filters: { JSON: ['json'], Markdown: ['md'] } });
             if (!destination) return;
             if (!/\.(json|md)$/i.test(destination.fsPath)) throw new Error('Save reports as .json or .md');
-            const text = /\.md$/i.test(destination.fsPath) ? '# Performance report\n\n```text\n' + report(lastReport) + '\n```\n' : JSON.stringify(lastReport, null, 2) + '\n';
+            const text = /\.md$/i.test(destination.fsPath) ? '# Performance report\n\n```text\n' + report(selectedReport) + '\n```\n' : JSON.stringify(selectedReport, null, 2) + '\n';
             await fs.writeFile(destination.fsPath, text);
             vscode.window.showInformationMessage('Report saved. JSON includes source/config hashes and timing samples.');
         } catch (error) { vscode.window.showErrorMessage(String(error)); }

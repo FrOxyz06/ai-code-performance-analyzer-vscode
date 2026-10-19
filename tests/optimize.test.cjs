@@ -40,7 +40,19 @@ async function harness(options = {}) {
             },
             showQuickPick: async items => items[0],
             withProgress: async (_, fn) => fn({}, { isCancellationRequested: !!options.cancelled }),
-            showWarningMessage: async () => options.execute === false ? undefined : 'Run trusted code',
+            showWarningMessage: async () => {
+                if (options.changedAtConfirmation) await fs.appendFile(state.candidate.fsPath, '# edited');
+                if (options.dirtyAtConfirmation) api.workspace.textDocuments.push({ uri: state.candidate, isDirty: true });
+                return options.execute === false ? undefined : 'Run trusted code';
+            },
+            showSaveDialog: async () => {
+                // A cancelled new run clears lastReport while the save dialog is open.
+                const open = api.window.showOpenDialog;
+                api.window.showOpenDialog = async () => undefined;
+                try { await state.commands.get('performanceAnalyzer.profileFile')(); }
+                finally { api.window.showOpenDialog = open; }
+                return uri(path.join(root, 'report.json'));
+            },
             showTextDocument: async () => {}
         },
         commands: {
@@ -77,6 +89,10 @@ async function harness(options = {}) {
     } finally { Module._load = old; }
     try {
         await state.commands.get('performanceAnalyzer.optimizeFile')();
+        if (options.exportDuringRun) {
+            await state.commands.get('performanceAnalyzer.exportReport')();
+            state.exported = JSON.parse(await fs.readFile(path.join(root, 'report.json'), 'utf8'));
+        }
         assert.equal(await fs.readFile(file, 'utf8'), before, 'Original on disk must never be overwritten');
         return { ...state, text: doc.text, before, after, dirty: doc.isDirty };
     } finally { await fs.rm(root, { recursive: true, force: true }); }
@@ -125,6 +141,20 @@ test('changes to either source after measurement block acceptance', async () => 
         assert.equal(result.runs, 1); assert.equal(result.applies, 0);
         assert.match(result.errors[0], /changed after|changed during/);
     }
+});
+
+test('candidate changes during execution confirmation prevent stale execution', async () => {
+    for (const options of [{ changedAtConfirmation: true }, { dirtyAtConfirmation: true }]) {
+        const result = await harness(options);
+        assert.equal(result.runs, 0); assert.equal(result.applies, 0);
+        assert.match(result.errors[0], /candidate changed/);
+    }
+});
+
+test('export keeps its report snapshot when another run starts during the save dialog', async () => {
+    const result = await harness({ accept: false, exportDuringRun: true });
+    assert.equal(result.exported.passed, true);
+    assert.deepEqual(result.errors, []);
 });
 
 test('candidate parser requires a complete, bounded JSON code field', () => {
