@@ -43,6 +43,7 @@
     }
   },
   "scripts": {
+    "vscode:prepublish": "npm run compile",
     "compile": "tsc",
     "test": "npm run compile && node --test tests/*.test.cjs",
     "test:python": "python -m unittest discover -s tests -p \"test_*.py\" -v",
