@@ -4,5 +4,5 @@ __pycache__/
 *.pyc
 *.vsix
 .env
-*.collab-proposal.json
+*.performance-candidate-*.py
 .vscode-test/

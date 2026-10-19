@@ -36,60 +36,42 @@ async function workflow() {
         for (const command of manifest.contributes.commands) assert.ok(commands.includes(command.command));
         const doc = await vscode.workspace.openTextDocument(originalFile);
         await vscode.window.showTextDocument(doc);
-        const configKey = manifest.name === 'realtime-collaborative-coding' ? 'collab' : 'performanceAnalyzer';
-        await vscode.workspace.getConfiguration(configKey).update('pythonPath', process.env.TEST_PYTHON, vscode.ConfigurationTarget.Global);
-        if (configKey === 'collab') {
-            const { hash } = require('./proposal.cjs');
-            const proposalFile = path.join(root, 'change.collab-proposal.json');
-            await fs.writeFile(proposalFile, JSON.stringify({ schemaVersion: 1, target: 'example.py', baseHash: hash(original), proposedText: candidate }));
-            dialogs.push(proposalFile);
-            await vscode.commands.executeCommand('collab.reviewProposal');
-            dialogs.push(path.join(root, 'benchmark.json'));
-            await vscode.commands.executeCommand('collab.benchmarkProposal');
-            await vscode.commands.executeCommand('collab.acceptProposal');
-            assert.equal(doc.getText(), candidate, 'Accepted proposal did not update the real editor');
-            assert.equal(doc.isDirty, true);
-            assert.equal(await fs.readFile(originalFile, 'utf8'), original);
-            await vscode.commands.executeCommand('undo');
-            assert.equal(doc.getText(), original, 'Undo did not restore original');
-        } else {
-            dialogs.push(path.join(root, 'candidate.py'), path.join(root, 'benchmark.json'));
-            await vscode.commands.executeCommand('performanceAnalyzer.analyzeFile');
-            await vscode.commands.executeCommand('performanceAnalyzer.exportReport');
-            const result = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
-            assert.equal(result.passed, true);
-            assert.equal(result.cases.length, 3);
+        await vscode.workspace.getConfiguration('performanceAnalyzer').update('pythonPath', process.env.TEST_PYTHON, vscode.ConfigurationTarget.Global);
+        dialogs.push(path.join(root, 'candidate.py'), path.join(root, 'benchmark.json'));
+        await vscode.commands.executeCommand('performanceAnalyzer.analyzeFile');
+        await vscode.commands.executeCommand('performanceAnalyzer.exportReport');
+        const result = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
+        assert.equal(result.passed, true);
+        assert.equal(result.cases.length, 3);
+        dialogs.push(path.join(root, 'benchmark.json'));
+        await vscode.window.showTextDocument(doc);
+        await vscode.commands.executeCommand('performanceAnalyzer.profileFile');
+        await vscode.commands.executeCommand('performanceAnalyzer.exportReport');
+        const profile = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
+        assert.equal(profile.mode, 'profile');
+        assert.ok(profile.cases[0].hotspots.length);
+        // Mock only the external AI response; exercise real VS Code documents,
+        // diffs, Python execution, report export, applyEdit and undo.
+        const copilot = require('../out/copilot.js');
+        const generate = copilot.generateCandidate;
+        try {
+            copilot.generateCandidate = async source => {
+                assert.equal(source, original);
+                return candidate;
+            };
             dialogs.push(path.join(root, 'benchmark.json'));
             await vscode.window.showTextDocument(doc);
-            await vscode.commands.executeCommand('performanceAnalyzer.profileFile');
+            await vscode.commands.executeCommand('performanceAnalyzer.optimizeFile');
+            assert.equal(doc.getText(), candidate, 'Generated candidate was not applied');
+            assert.equal(doc.isDirty, true);
+            assert.equal(await fs.readFile(originalFile, 'utf8'), original);
             await vscode.commands.executeCommand('performanceAnalyzer.exportReport');
-            const profile = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
-            assert.equal(profile.mode, 'profile');
-            assert.ok(profile.cases[0].hotspots.length);
-            // Mock only the external AI response; exercise real VS Code documents,
-            // diffs, Python execution, report export, applyEdit and undo.
-            const copilot = require('../out/copilot.js');
-            const generate = copilot.generateCandidate;
-            try {
-                copilot.generateCandidate = async source => {
-                    assert.equal(source, original);
-                    return candidate;
-                };
-                dialogs.push(path.join(root, 'benchmark.json'));
-                await vscode.window.showTextDocument(doc);
-                await vscode.commands.executeCommand('performanceAnalyzer.optimizeFile');
-                assert.equal(doc.getText(), candidate, 'Generated candidate was not applied');
-                assert.equal(doc.isDirty, true);
-                assert.equal(await fs.readFile(originalFile, 'utf8'), original);
-                await vscode.commands.executeCommand('performanceAnalyzer.exportReport');
-                const optimized = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
-                assert.equal(optimized.passed, true);
-                assert.equal(optimized.measurement.method, 'alternating-batches');
-                await vscode.commands.executeCommand('undo');
-                assert.equal(doc.getText(), original, 'Undo did not restore the original');
-            } finally { copilot.generateCandidate = generate; }
-
-        }
+            const optimized = JSON.parse(await fs.readFile(path.join(root, 'report.json')));
+            assert.equal(optimized.passed, true);
+            assert.equal(optimized.measurement.method, 'alternating-batches');
+            await vscode.commands.executeCommand('undo');
+            assert.equal(doc.getText(), original, 'Undo did not restore the original');
+        } finally { copilot.generateCandidate = generate; }
         assert.deepEqual(errors, []);
         console.log('EDITOR WORKFLOW PASSED: ' + manifest.name);
     } finally {
